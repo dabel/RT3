@@ -1,0 +1,199 @@
+/* 
+ * File: ISAACCipher.cpp
+ * Description: ISAAC Cipher impl
+ * Author: t4
+ * 
+ */
+
+#include "ISAACCipher.h"
+
+ISAACCipher::ISAACCipher(int seedv[]) : 
+	count(0), a(0), b(0), c(0), results(new int[SIZE]), memory(new int[SIZE]) {
+	for(int i = 0; i < SEED_LEN; ++i)
+		results[i] = seedv[i];
+	init(true);
+}
+	
+ISAACCipher::~ISAACCipher() {
+	delete [] results;
+	delete [] memory;
+}
+	
+int ISAACCipher::getNextValue() {
+	if(count-- == 0) {
+		isaac();
+		count = SIZE - 1;
+	}
+	return results[count];
+}
+	
+void ISAACCipher::isaac() {
+	int i, j, x, y;
+	b += ++c;
+	for(i = 0, j = SIZE / 2; i < SIZE / 2;) {
+		x = memory[i];
+		a ^= a << 13;
+		a += memory[j++];
+		memory[i] = y = memory[(x & MASK) >> 2] + a + b;
+		results[i++] = b = memory[((y >> SIZE_LOG) & MASK) >> 2] + x;
+		x = memory[i];
+		a ^= (unsigned) a >> 6;
+		a += memory[j++];
+		memory[i] = y = memory[(x & MASK) >> 2] + a + b;
+		results[i++] = b = memory[((y >> SIZE_LOG) & MASK) >> 2] + x;
+		x = memory[i];
+		a ^= a << 2;
+		a += memory[j++];
+		memory[i] = y = memory[(x & MASK) >> 2] + a + b;
+		results[i++] = b = memory[((y >> SIZE_LOG) & MASK) >> 2] + x;
+		x = memory[i];
+		a ^= (unsigned) a >> 16;
+		a += memory[j++];
+		memory[i] = y = memory[(x & MASK) >> 2] + a + b;
+		results[i++] = b = memory[((y >> SIZE_LOG) & MASK) >> 2] + x;
+	}
+	for(j = 0; j < SIZE / 2;) {
+		x = memory[i];
+		a ^= a << 13;
+		a += memory[j++];
+		memory[i] = y = memory[(x & MASK) >> 2] + a + b;
+		results[i++] = b = memory[((y >> SIZE_LOG) & MASK) >> 2] + x;
+		x = memory[i];
+		a ^= (unsigned) a >> 6;
+		a += memory[j++];
+		memory[i] = y = memory[(x & MASK) >> 2] + a + b;
+		results[i++] = b = memory[((y >> SIZE_LOG) & MASK) >> 2] + x;
+		x = memory[i];
+		a ^= a << 2;
+		a += memory[j++];
+		memory[i] = y = memory[(x & MASK) >> 2] + a + b;
+		results[i++] = b = memory[((y >> SIZE_LOG) & MASK) >> 2] + x;
+		x = memory[i];
+		a ^= (unsigned) a >> 16;
+		a += memory[j++];
+		memory[i] = y = memory[(x & MASK) >> 2] + a + b;
+		results[i++] = b = memory[((y >> SIZE_LOG) & MASK) >> 2] + x;
+	}
+}
+	
+void ISAACCipher::init(bool flag) {
+	int i;
+	int a, b, c, d, e, f, g, h;
+	a = b = c = d = e = f = g = h = RATIO;
+	for(i = 0; i < 4; ++i) {
+		a ^= b << 11;
+		d += a;
+		b += c;
+		b ^= (unsigned) c >> 2;
+		e += b;
+		c += d;
+		c ^= d << 8;
+		f += c;
+		d += e;
+		d ^= (unsigned) e >> 16;
+		g += d;
+		e += f;
+		e ^= f << 10;
+		h += e;
+		f += g;
+		f ^= (unsigned) g >> 4;
+		a += f;
+		g += h;
+		g ^= h << 8;
+		b += g;
+		h += a;
+		h ^= (unsigned) a >> 9;
+		c += h;
+		a += b;
+	}
+	for(i = 0; i < SIZE; i += 8) {
+		if(flag) {
+			a += results[i];
+			b += results[i + 1];
+			c += results[i + 2];
+			d += results[i + 3];
+			e += results[i + 4];
+			f += results[i + 5];
+			g += results[i + 6];
+			h += results[i + 7];
+		}
+		a ^= b << 11;
+		d += a;
+		b += c;
+		b ^= (unsigned) c >> 2;
+		e += b;
+		c += d;
+		c ^= d << 8;
+		f += c;
+		d += e;
+		d ^= (unsigned) e >> 16;
+		g += d;
+		e += f;
+		e ^= f << 10;
+		h += e;
+		f += g;
+		f ^= (unsigned) g >> 4;
+		a += f;
+		g += h;
+		g ^= h << 8;
+		b += g;
+		h += a;
+		h ^= (unsigned) a >> 9;
+		c += h;
+		a += b;
+		memory[i] = a;
+		memory[i + 1] = b;
+		memory[i + 2] = c;
+		memory[i + 3] = d;
+		memory[i + 4] = e;
+		memory[i + 5] = f;
+		memory[i + 6] = g;
+		memory[i + 7] = h;
+	}
+	if(flag) {
+		for(i = 0; i < SIZE; i += 8) {
+			a += memory[i];
+			b += memory[i + 1];
+			c += memory[i + 2];
+			d += memory[i + 3];
+			e += memory[i + 4];
+			f += memory[i + 5];
+			g += memory[i + 6];
+			h += memory[i + 7];
+			a ^= b << 11;
+			d += a;
+			b += c;
+			b ^= (unsigned) c >> 2;
+			e += b;
+			c += d;
+			c ^= d << 8;
+			f += c;
+			d += e;
+			d ^= (unsigned) e >> 16;
+			g += d;
+			e += f;
+			e ^= f << 10;
+			h += e;
+			f += g;
+			f ^= (unsigned) g >> 4;
+			a += f;
+			g += h;
+			g ^= h << 8;
+			b += g;
+			h += a;
+			h ^= (unsigned) a >> 9;
+			c += h;
+			a += b;
+			memory[i] = a;
+			memory[i + 1] = b;
+			memory[i + 2] = c;
+			memory[i + 3] = d;
+			memory[i + 4] = e;
+			memory[i + 5] = f;
+			memory[i + 6] = g;
+			memory[i + 7] = h;
+		}
+	}
+	isaac();
+	count = SIZE;
+}
