@@ -1,0 +1,3 @@
+This application requires certain boost <http://www.boost.org/users/download/#live> 
+libraries (boost_thread, boost_system, etc). You can obtain the libraries from
+the link above and can link whilst compiling using the -lboost_libname flag.
